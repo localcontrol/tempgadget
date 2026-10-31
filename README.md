@@ -13,6 +13,7 @@ A small always-on-top desktop gadget for Windows that shows the temperature and 
 - **10 layouts, 14 themes, 5 shapes** and one-click presets. Combine them freely.
 - **Size 20-100%** (Ctrl + mouse wheel or the menu) and **horizontal / vertical** arrangement.
 - **Hover hint:** point at any dial to get a large, readable label with the name and value, even at small scale. RAM also shows used / total GB.
+- **Overheat protection:** when a temperature crosses its threshold (CPU/GPU 70-95 °C, drives 70 °C) the frame pulses red and a tray notification appears, optionally with a sound. At a critical temperature (threshold +10 °C, held for 3 seconds) you can pick an action: only warn (default), reduce CPU power to 50% until it cools down, hibernate or shut down (30 s countdown with a Cancel button).
 - **Interface language: English / Russian**, switchable from the right-click menu (defaults to the Windows language).
 - Tray icon with live readings, opacity, always-on-top, remembers position and settings.
 - Optional **system cleaner** (temp files, update cache, browser caches, shader caches, thumbnails, crash dumps, recycle bin, DNS cache). It runs only when you ask for it and lets you choose what to clean.
@@ -41,7 +42,7 @@ Previews are rendered with sample values.
 | Action | Result |
 | --- | --- |
 | Drag with the left mouse button | Move the gadget |
-| Right click | Menu: presets, what to show, theme, layout, shape, orientation, size, opacity, language, always-on-top, cleaner, exit |
+| Right click | Menu: presets, what to show, theme, layout, shape, orientation, size, opacity, overheat settings, language, always-on-top, cleaner, exit |
 | Ctrl + mouse wheel | Change size (20-100%) |
 | Double click | Minimize to tray |
 | Hover | Hint with the name and value |

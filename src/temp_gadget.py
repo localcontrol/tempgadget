@@ -149,6 +149,15 @@ STACKED = ("bars", "spark")  # cell is a full-width row (default orientation: ve
 SHAPES = {"square": 4, "soft": 20, "round": 0.32, "pill": 0.5, "cut": "cut"}
 SCALES = (20, 30, 40, 50, 60, 70, 80, 90, 100)
 OPACITIES = (100, 85, 70)
+LIMITS = (70, 75, 80, 85, 90, 95)  # overheat thresholds for CPU/GPU, deg C
+DISK_LIMIT = 70  # drives have a fixed threshold
+CRIT_OFFSET = 10  # critical = limit + this; sustained for CRIT_POLLS polls triggers the action
+CRIT_POLLS = 3
+ACTIONS = ("none", "throttle", "hibernate", "shutdown")  # what to do at a critical temperature
+THROTTLE_PCT = 50  # max CPU power while throttled
+COUNTDOWN = 30  # seconds to cancel hibernate / shutdown
+POWER_CMDS = {"hibernate": ["shutdown", "/h"], "shutdown": ["shutdown", "/s", "/t", "0"]}
+HYST = 5  # re-arm the alert after cooling this many degrees below the limit
 PRESETS = {  # one-click combos (key = translation key)
     "p_reactor": dict(theme="Cyberpunk", layout="gauge", shape="cut"),
     "p_aquarium": dict(theme="Ocean", layout="liquid", shape="round"),
@@ -161,7 +170,7 @@ PRESETS = {  # one-click combos (key = translation key)
                       show=["CPU", "LOAD", "GPU", "GPUL", "RAM"]),
 }
 DEFAULTS = dict(theme="Glass", layout="dial", shape="soft", scale=1.0, opacity=100, ontop=True,
-                show=DEFAULT_SHOW)
+                show=DEFAULT_SHOW, alarm=True, limit=85, sound=True, action="none", throttled=False)
 LEGACY = {  # layout / shape names stored by versions before 1.1 (were Russian display names)
     "Компакт": "compact", "Спидометр": "gauge", "Спидометр + t°": "dial", "Жидкость": "liquid",
     "Строка": "line", "Кольца": "rings", "Дуги": "arc", "Полосы": "bars", "Цифры": "numbers",
@@ -316,6 +325,20 @@ STR = {  # key: (Russian, English)
     "menu_lang": ("Язык / Language", "Язык / Language"),
     "menu_tray": ("Свернуть в трей (двойной клик)", "Minimize to tray (double click)"),
     "menu_top": ("Поверх всех окон", "Always on top"),
+    "menu_hot": ("Перегрев", "Overheat"),
+    "hot_alarm": ("Предупреждать о перегреве", "Warn about overheating"),
+    "hot_limit": ("Порог CPU/GPU", "CPU/GPU threshold"),
+    "hot_sound": ("Звуковой сигнал", "Sound alert"),
+    "hot_action": ("При критической температуре (порог +10 °C)", "At critical temperature (threshold +10 °C)"),
+    "act_none": ("Только предупреждать", "Only warn"),
+    "act_throttle": ("Снизить мощность процессора до 50%", "Reduce CPU power to 50%"),
+    "act_hibernate": ("Гибернация", "Hibernate"),
+    "act_shutdown": ("Выключить ПК", "Shut down"),
+    "hot_crit": ("Критическая температура!", "Critical temperature!"),
+    "hot_throttled": ("Мощность процессора снижена до 50%, вернётся после остывания.",
+                      "CPU power reduced to 50%, it will be restored once cooled."),
+    "sec": ("с", "s"),
+    "hot_cancel": ("Отменить", "Cancel"),
     "menu_toggle": ("Показать / скрыть гаджет", "Show / hide gadget"),
     "menu_clean": ("Очистить систему от мусора", "Clean system junk"),
     "menu_cleaning": ("Очищается...", "Cleaning..."),
@@ -551,6 +574,10 @@ class Gadget(QWidget):
         if self.cfg.get("orient") not in ("h", "v"):
             self.cfg["orient"] = "v" if self.cfg["layout"] in STACKED else "h"
         self.cfg["scale"] = min(max(float(self.cfg["scale"]), SCALE_MIN), SCALE_MAX)
+        if self.cfg["limit"] not in LIMITS:
+            self.cfg["limit"] = DEFAULTS["limit"]
+        if self.cfg["action"] not in ACTIONS:
+            self.cfg["action"] = DEFAULTS["action"]
         self.setWindowOpacity(self.cfg["opacity"] / 100)
 
         shown = [k for k in self.cfg.get("show", []) if k in METRICS]
@@ -559,10 +586,15 @@ class Gadget(QWidget):
         self.shown = dict.fromkeys(METRICS)
         self.hist = {k: deque(maxlen=HISTORY) for k in METRICS}
         self._off = None
+        self._hot = set()  # temperature metrics currently over their limit
+        self._crit = 0  # consecutive polls with a critical CPU/GPU temperature
+        self._throttled = False
         self.phase = 0.0
         self._apply(persist=False)
         self._place()
         self._tray_setup()
+        if self.cfg["throttled"]:  # a previous run ended while the CPU was capped
+            self._throttle(False)
 
         self._poll()
         QTimer(self, timeout=self._poll, interval=1000).start()
@@ -609,6 +641,10 @@ class Gadget(QWidget):
     def _set(self, **kw):
         self.cfg.update(kw)
         self._apply()
+
+    def _cfg_set(self, key, value):
+        self.cfg[key] = value
+        self._persist()
 
     def _toggle_metric(self, key, on):
         show = [k for k in METRICS if k in self.cfg["show"]]
@@ -755,8 +791,84 @@ class Gadget(QWidget):
         for k, v in self.target.items():
             if v is not None:
                 self.hist[k].append(v)
+        self._check_alarm()
         self._tray_update()
         self._tip_show()
+
+    def _limit(self, k):
+        return self.cfg["limit"] if k in ("CPU", "GPU") else DISK_LIMIT
+
+    def _check_alarm(self):
+        """Notify when a temperature crosses its limit; run the chosen action if it stays critical."""
+        if not self.cfg["alarm"]:
+            self._hot.clear()
+            self._crit = 0
+            self.release()
+            return
+        fresh = []
+        for k, v in self.target.items():
+            if v is None or METRICS[k]["kind"] != "temp":
+                continue
+            if v >= self._limit(k) and k not in self._hot:
+                self._hot.add(k)
+                fresh.append(k)
+            elif v < self._limit(k) - HYST:
+                self._hot.discard(k)
+        if fresh:
+            self._notify("\n".join(f"{title(k)}: {self._long(k, self.target[k])}" for k in fresh))
+            if self.cfg["sound"]:
+                QApplication.beep()
+        action = self.cfg["action"]
+        crit = [k for k in (("CPU",) if action == "throttle" else ("CPU", "GPU"))
+                if self.target[k] is not None and self.target[k] >= self.cfg["limit"] + CRIT_OFFSET]
+        self._crit = self._crit + 1 if crit else 0
+        if self._crit == CRIT_POLLS and action != "none":
+            self._act(action)
+        cpu = self.target["CPU"]
+        if self._throttled and (cpu is None or cpu < self.cfg["limit"] - HYST):
+            self._throttle(False)
+
+    def _notify(self, text):
+        if self.tray is not None:
+            self.tray.showMessage(tr("hot_title"), text, QSystemTrayIcon.Warning, 8000)
+
+    def _act(self, action):
+        if action == "throttle":
+            self._throttle(True)
+            self._notify(tr("hot_throttled"))
+            return
+        left = COUNTDOWN
+        box = QMessageBox(QMessageBox.Critical, tr("hot_title"), "", QMessageBox.Cancel, self)
+        box.button(QMessageBox.Cancel).setText(tr("hot_cancel"))
+        box.setWindowFlag(Qt.WindowStaysOnTopHint)
+
+        def tick():
+            nonlocal left
+            box.setText(f"{tr('hot_crit')}\n{tr('act_' + action)}: {left} {tr('sec')}")
+            if left <= 0:
+                box.accept()
+            left -= 1
+
+        timer = QTimer(box, interval=1000, timeout=tick)
+        tick()
+        timer.start()
+        if box.exec() != QMessageBox.Cancel:
+            subprocess.run(POWER_CMDS[action], creationflags=NO_WINDOW)
+
+    def _throttle(self, on):
+        """Cap (or restore) the maximum CPU power in the active Windows power plan."""
+        pct = str(THROTTLE_PCT if on else 100)
+        for mode in ("setacvalueindex", "setdcvalueindex"):
+            subprocess.run(["powercfg", "/" + mode, "SCHEME_CURRENT", "SUB_PROCESSOR",
+                            "PROCTHROTTLEMAX", pct], creationflags=NO_WINDOW)
+        subprocess.run(["powercfg", "/setactive", "SCHEME_CURRENT"], creationflags=NO_WINDOW)
+        self._throttled = on
+        self._cfg_set("throttled", on)
+
+    def release(self):
+        """Undo the CPU cap (called on exit and when alerts are switched off)."""
+        if self._throttled:
+            self._throttle(False)
 
     def _animate(self):
         for k in METRICS:
@@ -1209,9 +1321,7 @@ class Gadget(QWidget):
         p.restore()
         # light edge: bright top-left, fading bottom-right; pulses red when hot
         bc = QColor(*self.t["border"])
-        vals = [self.shown[k] for k in self.active
-                if METRICS[k]["kind"] == "temp" and self.shown[k] is not None]
-        if vals and max(vals) >= 85:
+        if self._hot:
             bc = QColor(255, 50, 50, int(150 + 90 * math.sin(self.phase * 6)))
         hi, lo = QColor(bc), QColor(bc)
         hi.setAlpha(min(255, bc.alpha() * 2))
@@ -1261,6 +1371,12 @@ class Gadget(QWidget):
             a.triggered.connect(lambda _=False, v=value: setter(v))
             sub.addAction(a)
 
+    def _check(self, menu, text, key):
+        act = menu.addAction(text)
+        act.setCheckable(True)
+        act.setChecked(self.cfg[key])
+        act.toggled.connect(lambda on: self._cfg_set(key, on))
+
     def contextMenuEvent(self, e):
         self._tip_hide()
         c = self.cfg
@@ -1288,6 +1404,13 @@ class Gadget(QWidget):
         self._radio(menu, tr("menu_opacity"), [(f"{o}%", o) for o in OPACITIES],
                     round(self.windowOpacity() * 100),
                     lambda v: (self.setWindowOpacity(v / 100), self._persist()))
+        hot = menu.addMenu(tr("menu_hot"))
+        self._check(hot, tr("hot_alarm"), "alarm")
+        self._radio(hot, tr("hot_limit"), [(f"{n} °C", n) for n in LIMITS], c["limit"],
+                    lambda v: self._cfg_set("limit", v))
+        self._check(hot, tr("hot_sound"), "sound")
+        self._radio(hot, tr("hot_action"), [(tr("act_" + a), a) for a in ACTIONS], c["action"],
+                    lambda v: self._cfg_set("action", v))
         self._radio(menu, tr("menu_lang"), list(LANGS.items()), LANG, self._set_lang)
         if self.tray is not None:
             menu.addAction(tr("menu_tray"), self.hide)
@@ -1309,5 +1432,6 @@ if __name__ == "__main__":
     app.setQuitOnLastWindowClosed(False)
     app.aboutToQuit.connect(pc.Close)
     gadget = Gadget()
+    app.aboutToQuit.connect(gadget.release)
     gadget.show()
     sys.exit(app.exec())
