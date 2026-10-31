@@ -87,4 +87,4 @@ The program is free to use. See `installer/license.txt` for the terms.
 
 ## Author
 
-Artvip
+localcontrol

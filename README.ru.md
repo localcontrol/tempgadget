@@ -73,4 +73,4 @@ LibreHardwareMonitor (MPL 2.0), PySide6 / Qt for Python (LGPLv3), драйвер
 
 ## Автор
 
-Artvip
+localcontrol
