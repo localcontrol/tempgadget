@@ -27,12 +27,12 @@ CPU_PREF = ("CPU Package", "Core (Tctl/Tdie)", "Core (Tdie)", "CPU Total")
 GPU_PREF = ("GPU Core",)
 GPU_TYPES = {HardwareType.GpuNvidia, HardwareType.GpuAmd, HardwareType.GpuIntel}
 CFG_FILE = Path(os.getenv("APPDATA", ".")) / "TempGadget" / "config.json"
-METRICS = {  # key: label, kind (temp = degrees C, load = percent)
-    "CPU": dict(label="CPU", kind="temp", title="CPU: температура"),
-    "GPU": dict(label="GPU", kind="temp", title="GPU: температура"),
-    "LOAD": dict(label="CPU %", kind="load", title="CPU: загрузка"),
-    "GPUL": dict(label="GPU %", kind="load", title="GPU: загрузка"),
-    "RAM": dict(label="ОЗУ", kind="load", title="ОЗУ: занято"),
+METRICS = {  # key: label and title (translation keys), kind (temp = degrees C, load = percent)
+    "CPU": dict(label="CPU", kind="temp", title="m_cpu"),
+    "GPU": dict(label="GPU", kind="temp", title="m_gpu"),
+    "LOAD": dict(label="CPU %", kind="load", title="m_load"),
+    "GPUL": dict(label="GPU %", kind="load", title="m_gpul"),
+    "RAM": dict(label="m_ram_label", kind="load", title="m_ram"),
 }
 DEFAULT_SHOW = ["CPU", "LOAD", "RAM"]
 T_MIN, T_MAX = 20, 100
@@ -131,38 +131,43 @@ BG2 = {
     "Matrix": (0, 28, 6, 238), "Retro": (40, 22, 2, 238), "Sakura": (255, 222, 236, 238),
     "Frost": (190, 215, 245, 210), "Inferno": (80, 8, 4, 238), "Vapor": (80, 15, 100, 232),
 }
-LAYOUTS = {  # name: (draw style, base size for two cells)
-    "Компакт": ("compact", (168, 104)),
-    "Спидометр": ("gauge", (340, 190)),
-    "Спидометр + t°": ("dial", (300, 150)),
-    "Жидкость": ("liquid", (300, 150)),
-    "Строка": ("line", (300, 50)),
-    "Кольца": ("rings", (300, 160)),
-    "Дуги": ("arc", (320, 150)),
-    "Полосы": ("bars", (280, 120)),
-    "Цифры": ("numbers", (240, 100)),
-    "График": ("spark", (300, 130)),
+LAYOUTS = {  # id (also the draw style): base size for two cells
+    "compact": (168, 104),
+    "gauge": (340, 190),
+    "dial": (300, 150),
+    "liquid": (300, 150),
+    "line": (300, 50),
+    "rings": (300, 160),
+    "arc": (320, 150),
+    "bars": (280, 120),
+    "numbers": (240, 100),
+    "spark": (300, 130),
 }
 DIAL_SMALL = 0.7  # size of the 2nd, 3rd... dial relative to the first
 STACKED = ("bars", "spark")  # cell is a full-width row (default orientation: vertical)
 # px, or fraction of height if < 1, or "cut" for chamfered corners
-SHAPES = {"Квадрат": 4, "Мягкая": 20, "Круглая": 0.32, "Таблетка": 0.5, "Скос": "cut"}
+SHAPES = {"square": 4, "soft": 20, "round": 0.32, "pill": 0.5, "cut": "cut"}
 SCALES = (20, 30, 40, 50, 60, 70, 80, 90, 100)
 OPACITIES = (100, 85, 70)
-PRESETS = {  # one-click combos
-    "Реактор": dict(theme="Cyberpunk", layout="Спидометр", shape="Скос"),
-    "Аквариум": dict(theme="Ocean", layout="Жидкость", shape="Круглая"),
-    "Инферно": dict(theme="Inferno", layout="Спидометр", shape="Мягкая"),
-    "Vaporwave": dict(theme="Vapor", layout="Жидкость", shape="Мягкая"),
-    "Стелс": dict(theme="OLED", layout="Строка", shape="Таблетка"),
-    "Сакура": dict(theme="Sakura", layout="Дуги", shape="Мягкая"),
-    "Спидометры (как 8GadgetPack)": dict(theme="Glass", layout="Спидометр + t°", shape="Мягкая",
-                                         show=["CPU", "LOAD", "RAM"]),
-    "Компакт (как 8GadgetPack)": dict(theme="Glass", layout="Компакт", shape="Мягкая",
-                                      show=["CPU", "LOAD", "GPU", "GPUL", "RAM"]),
+PRESETS = {  # one-click combos (key = translation key)
+    "p_reactor": dict(theme="Cyberpunk", layout="gauge", shape="cut"),
+    "p_aquarium": dict(theme="Ocean", layout="liquid", shape="round"),
+    "p_inferno": dict(theme="Inferno", layout="gauge", shape="soft"),
+    "p_vapor": dict(theme="Vapor", layout="liquid", shape="soft"),
+    "p_stealth": dict(theme="OLED", layout="line", shape="pill"),
+    "p_sakura": dict(theme="Sakura", layout="arc", shape="soft"),
+    "p_dial": dict(theme="Glass", layout="dial", shape="soft", show=["CPU", "LOAD", "RAM"]),
+    "p_compact": dict(theme="Glass", layout="compact", shape="soft",
+                      show=["CPU", "LOAD", "GPU", "GPUL", "RAM"]),
 }
-DEFAULTS = dict(theme="Glass", layout="Спидометр + t°", shape="Мягкая", scale=1.0, opacity=100, ontop=True,
+DEFAULTS = dict(theme="Glass", layout="dial", shape="soft", scale=1.0, opacity=100, ontop=True,
                 show=DEFAULT_SHOW)
+LEGACY = {  # layout / shape names stored by versions before 1.1 (were Russian display names)
+    "Компакт": "compact", "Спидометр": "gauge", "Спидометр + t°": "dial", "Жидкость": "liquid",
+    "Строка": "line", "Кольца": "rings", "Дуги": "arc", "Полосы": "bars", "Цифры": "numbers",
+    "График": "spark", "Квадрат": "square", "Мягкая": "soft", "Круглая": "round",
+    "Таблетка": "pill", "Скос": "cut",
+}
 
 pc = Computer()
 pc.IsCpuEnabled = True
@@ -177,7 +182,7 @@ for _hw in pc.Hardware:
         if any(s.SensorType == SensorType.Temperature for s in _hw.Sensors):
             _name = str(_hw.Name)
             METRICS["DSK:" + _name] = dict(label=_name.split()[0][:7].upper(), kind="temp",
-                                           title="Диск: " + _name)
+                                           name=_name)
 
 
 def pick(hw, prefs):
@@ -265,6 +270,102 @@ def save_cfg(cfg):
     CFG_FILE.write_text(json.dumps(cfg))
 
 
+STR = {  # key: (Russian, English)
+    "m_cpu": ("CPU: температура", "CPU: temperature"),
+    "m_gpu": ("GPU: температура", "GPU: temperature"),
+    "m_load": ("CPU: загрузка", "CPU: load"),
+    "m_gpul": ("GPU: загрузка", "GPU: load"),
+    "m_ram": ("ОЗУ: занято", "RAM: used"),
+    "m_ram_label": ("ОЗУ", "RAM"),
+    "disk": ("Диск", "Drive"),
+    "gb": ("ГБ", "GB"),
+    "mb": ("МБ", "MB"),
+    "compact": ("Компакт", "Compact"),
+    "gauge": ("Спидометр", "Speedometer"),
+    "dial": ("Спидометр + t°", "Speedometer + t°"),
+    "liquid": ("Жидкость", "Liquid"),
+    "line": ("Строка", "Line"),
+    "rings": ("Кольца", "Rings"),
+    "arc": ("Дуги", "Arcs"),
+    "bars": ("Полосы", "Bars"),
+    "numbers": ("Цифры", "Numbers"),
+    "spark": ("График", "Graph"),
+    "square": ("Квадрат", "Square"),
+    "soft": ("Мягкая", "Soft"),
+    "round": ("Круглая", "Round"),
+    "pill": ("Таблетка", "Pill"),
+    "cut": ("Скос", "Chamfer"),
+    "p_reactor": ("Реактор", "Reactor"),
+    "p_aquarium": ("Аквариум", "Aquarium"),
+    "p_inferno": ("Инферно", "Inferno"),
+    "p_vapor": ("Vaporwave", "Vaporwave"),
+    "p_stealth": ("Стелс", "Stealth"),
+    "p_sakura": ("Сакура", "Sakura"),
+    "p_dial": ("Спидометры (как 8GadgetPack)", "Speedometers (8GadgetPack style)"),
+    "p_compact": ("Компакт (как 8GadgetPack)", "Compact (8GadgetPack style)"),
+    "menu_presets": ("✨ Пресеты", "✨ Presets"),
+    "menu_show": ("Показывать", "Show"),
+    "menu_theme": ("Тема", "Theme"),
+    "menu_layout": ("Вид", "Layout"),
+    "menu_shape": ("Форма", "Shape"),
+    "menu_orient": ("Ориентация", "Orientation"),
+    "horizontal": ("Горизонтально", "Horizontal"),
+    "vertical": ("Вертикально", "Vertical"),
+    "menu_size": ("Размер (Ctrl+колесо)", "Size (Ctrl+wheel)"),
+    "menu_opacity": ("Прозрачность", "Opacity"),
+    "menu_lang": ("Язык / Language", "Язык / Language"),
+    "menu_tray": ("Свернуть в трей (двойной клик)", "Minimize to tray (double click)"),
+    "menu_top": ("Поверх всех окон", "Always on top"),
+    "menu_toggle": ("Показать / скрыть гаджет", "Show / hide gadget"),
+    "menu_clean": ("Очистить систему от мусора", "Clean system junk"),
+    "menu_cleaning": ("Очищается...", "Cleaning..."),
+    "menu_exit": ("Выход", "Exit"),
+    "clean_title": ("Очистка системы", "System cleaner"),
+    "clean_what": ("Что очистить:", "What to clean:"),
+    "clean_ok": ("Очистить", "Clean"),
+    "cancel": ("Отмена", "Cancel"),
+    "done_title": ("Очистка", "Cleaning"),
+    "done": ("Готово. Освобождено: {} {}", "Done. Freed: {} {}"),
+    "c_temp": ("Временные файлы (Windows\\Temp, %TEMP%)", "Temporary files (Windows\\Temp, %TEMP%)"),
+    "c_wu": ("Кэш Центра обновления и Delivery Optimization",
+             "Windows Update and Delivery Optimization cache"),
+    "c_browser": ("Кэш браузеров: Chrome, Edge, Firefox, Brave (без паролей и cookies)",
+                  "Browser caches: Chrome, Edge, Firefox, Brave (no passwords or cookies)"),
+    "c_shader": ("Кэш шейдеров: DirectX, NVIDIA, AMD", "Shader caches: DirectX, NVIDIA, AMD"),
+    "c_thumbs": ("Миниатюры и кэш значков", "Thumbnails and icon cache"),
+    "c_dumps": ("Дампы сбоев и отчёты об ошибках", "Crash dumps and error reports"),
+    "c_bin": ("Корзина", "Recycle bin"),
+    "c_dns": ("DNS-кэш", "DNS cache"),
+}
+LANGS = {"ru": "Русский", "en": "English"}
+
+
+def detect_lang():
+    try:  # Windows UI language: 0x19 = Russian
+        return "ru" if ctypes.windll.kernel32.GetUserDefaultUILanguage() & 0xFF == 0x19 else "en"
+    except Exception:
+        return "en"
+
+
+LANG = load_cfg().get("lang")
+if LANG not in LANGS:
+    LANG = detect_lang()
+
+
+def tr(key):
+    row = STR.get(key)
+    return key if row is None else row[LANG == "en"]
+
+
+def label(k):
+    return tr(METRICS[k]["label"])
+
+
+def title(k):
+    m = METRICS[k]
+    return tr(m["title"]) if "title" in m else f"{tr('disk')}: {m['name']}"
+
+
 NO_WINDOW = 0x08000000  # CREATE_NO_WINDOW
 
 
@@ -323,16 +424,7 @@ def wipe_files(pattern):
     return freed
 
 
-CLEAN_ITEMS = [
-    ("temp", "Временные файлы (Windows\\Temp, %TEMP%)"),
-    ("wu", "Кэш Центра обновления и Delivery Optimization"),
-    ("browser", "Кэш браузеров: Chrome, Edge, Firefox, Brave (без паролей и cookies)"),
-    ("shader", "Кэш шейдеров: DirectX, NVIDIA, AMD"),
-    ("thumbs", "Миниатюры и кэш значков"),
-    ("dumps", "Дампы сбоев и отчёты об ошибках"),
-    ("bin", "Корзина"),
-    ("dns", "DNS-кэш"),
-]
+CLEAN_ITEMS = ["temp", "wu", "browser", "shader", "thumbs", "dumps", "bin", "dns"]
 
 
 def clean_temp(sel):
@@ -453,10 +545,11 @@ class Gadget(QWidget):
             flags |= Qt.WindowStaysOnTopHint
         self.setWindowFlags(flags)
         for key, options in (("theme", THEMES), ("layout", LAYOUTS), ("shape", SHAPES)):
+            self.cfg[key] = LEGACY.get(self.cfg[key], self.cfg[key])
             if self.cfg[key] not in options:
                 self.cfg[key] = DEFAULTS[key]
         if self.cfg.get("orient") not in ("h", "v"):
-            self.cfg["orient"] = "v" if LAYOUTS[self.cfg["layout"]][0] in STACKED else "h"
+            self.cfg["orient"] = "v" if self.cfg["layout"] in STACKED else "h"
         self.cfg["scale"] = min(max(float(self.cfg["scale"]), SCALE_MIN), SCALE_MAX)
         self.setWindowOpacity(self.cfg["opacity"] / 100)
 
@@ -478,7 +571,7 @@ class Gadget(QWidget):
     # ---------- state ----------
     def _apply(self, persist=True):
         self.t = THEMES[self.cfg["theme"]]
-        self.style, (bw, bh) = LAYOUTS[self.cfg["layout"]]
+        self.style, (bw, bh) = self.cfg["layout"], LAYOUTS[self.cfg["layout"]]
         self.active = [k for k in METRICS if k in self.cfg["show"]]
         self.groups = self._groups()
         n = len(self.groups)
@@ -547,16 +640,30 @@ class Gadget(QWidget):
             return
         self.tray = QSystemTrayIcon(self)
         self._tray_menu = QMenu()
-        self._tray_menu.addAction("Показать / скрыть гаджет", self._toggle)
-        self._tray_menu.addAction("Очистить систему от мусора", self._clean_ask)
-        self._tray_menu.addSeparator()
-        self._tray_menu.addAction("Выход", QApplication.quit)
+        self._tray_fill()
         self.tray.setContextMenu(self._tray_menu)
         self.tray.activated.connect(
             lambda r: self._toggle() if r in (QSystemTrayIcon.Trigger,
                                               QSystemTrayIcon.DoubleClick) else None)
         self._tray_update()
         self.tray.show()
+
+    def _tray_fill(self):
+        self._tray_menu.clear()
+        self._tray_menu.addAction(tr("menu_toggle"), self._toggle)
+        self._tray_menu.addAction(tr("menu_clean"), self._clean_ask)
+        self._tray_menu.addSeparator()
+        self._tray_menu.addAction(tr("menu_exit"), QApplication.quit)
+
+    def _set_lang(self, lang):
+        global LANG
+        LANG = lang
+        self.cfg["lang"] = lang
+        self._persist()
+        if self.tray is not None:
+            self._tray_fill()
+            self._tray_update()
+        self.update()
 
     def _tray_update(self):
         if self.tray is None:
@@ -582,7 +689,7 @@ class Gadget(QWidget):
         p.end()
         self.tray.setIcon(QIcon(pm))
         self.tray.setToolTip("\n".join(
-            f"{METRICS[k]['label']}: " + self._long(k, self.target[k]) for k in self.active))
+            f"{label(k)}: " + self._long(k, self.target[k]) for k in self.active))
 
     def mouseDoubleClickEvent(self, e):
         if e.button() == Qt.LeftButton and self.tray is not None:
@@ -592,28 +699,28 @@ class Gadget(QWidget):
         if self._cleaning:
             return
         saved = self.cfg.get("clean")
-        chosen = set(saved) if isinstance(saved, list) else {k for k, _ in CLEAN_ITEMS}
+        chosen = set(saved) if isinstance(saved, list) else set(CLEAN_ITEMS)
         dlg = QDialog(self)
-        dlg.setWindowTitle("Очистка системы")
+        dlg.setWindowTitle(tr("clean_title"))
         dlg.setWindowFlag(Qt.WindowStaysOnTopHint)
         lay = QVBoxLayout(dlg)
-        lay.addWidget(QLabel("Что очистить:"))
+        lay.addWidget(QLabel(tr("clean_what")))
         boxes = {}
-        for key, title in CLEAN_ITEMS:
-            cb = QCheckBox(title)
+        for key in CLEAN_ITEMS:
+            cb = QCheckBox(tr("c_" + key))
             cb.setChecked(key in chosen)
             boxes[key] = cb
             lay.addWidget(cb)
         btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        btns.button(QDialogButtonBox.Ok).setText("Очистить")
-        btns.button(QDialogButtonBox.Cancel).setText("Отмена")
+        btns.button(QDialogButtonBox.Ok).setText(tr("clean_ok"))
+        btns.button(QDialogButtonBox.Cancel).setText(tr("cancel"))
         btns.accepted.connect(dlg.accept)
         btns.rejected.connect(dlg.reject)
         lay.addWidget(btns)
         if dlg.exec() != QDialog.Accepted:
             return
         sel = {k for k, cb in boxes.items() if cb.isChecked()}
-        self.cfg["clean"] = [k for k, _ in CLEAN_ITEMS if k in sel]
+        self.cfg["clean"] = [k for k in CLEAN_ITEMS if k in sel]
         self._persist()
         if not sel:
             return
@@ -624,8 +731,8 @@ class Gadget(QWidget):
     def _clean_done(self, freed):
         self._cleaning = False
         b = QMessageBox(self)
-        b.setWindowTitle("Очистка")
-        b.setText(f"Готово. Освобождено: {freed / 1048576:.1f} МБ")
+        b.setWindowTitle(tr("done_title"))
+        b.setText(tr("done").format(f"{freed / 1048576:.1f}", tr("mb")))
         b.setWindowFlag(Qt.WindowStaysOnTopHint)
         b.exec()
 
@@ -688,8 +795,7 @@ class Gadget(QWidget):
 
     @staticmethod
     def _sub(k):  # caption under a dial
-        m = METRICS[k]
-        return m["label"] + (" °C" if m["kind"] == "temp" else "")
+        return label(k) + (" °C" if METRICS[k]["kind"] == "temp" else "")
 
     def _text(self, p, rect, s, px, color, bold=False, align=Qt.AlignCenter):
         f = QFont(self.t["font"])
@@ -753,12 +859,12 @@ class Gadget(QWidget):
                        self.t["text"], True)
             self._text(p, QRectF(cx - w / 2, 72, w, 16), self._long(k2, v2, compact=True),
                        13, c2, True)
-            self._text(p, QRectF(cx - w / 2, 88, w, 14), METRICS[k2]["label"], 10,
+            self._text(p, QRectF(cx - w / 2, 88, w, 14), label(k2), 10,
                        self.t["dim"], True)
         else:
             self._text(p, QRectF(cx - 26, cy - 10, 52, 20), self._num(k, v), 15,
                        self.t["text"], True)
-            self._text(p, QRectF(cx - w / 2, 74, w, 16), METRICS[k]["label"], 11,
+            self._text(p, QRectF(cx - w / 2, 74, w, 16), label(k), 11,
                        self.t["dim"], True)
 
     def _cells(self):
@@ -837,13 +943,13 @@ class Gadget(QWidget):
         if k2:
             t2 = self.shown[k2]
             hc, htxt, hpx = self._col(k2, t2), self._num(k2, t2), 16
-            main, sub_ = self._num(k, v), METRICS[k2]["label"]
+            main, sub_ = self._num(k, v), label(k2)
         elif METRICS[k]["kind"] == "load":
-            hc, htxt, hpx = c, METRICS[k]["label"], 11
+            hc, htxt, hpx = c, label(k), 11
             main, sub_ = self._num(k, v), ""
         else:
             hc, htxt, hpx = c, self._num(k, v), 16
-            main, sub_ = METRICS[k]["label"], ""
+            main, sub_ = label(k), ""
         p.setBrush(QColor(*self.t["bg"][:3]))
         if self.t["glow"]:
             g = QColor(hc)
@@ -900,7 +1006,7 @@ class Gadget(QWidget):
             p.drawArc(QRectF(cx - r + 8, cy - r + 8, 2 * r - 16, 2 * r - 16), 110 * 16, 50 * 16)
             self._text(p, QRectF(cx - 45, cy - 20, 90, 40), self._num(k, v), 28,
                        self.t["text"], True)
-            self._text(p, QRectF(cx - 45, 124, 90, 20), METRICS[k]["label"], 12,
+            self._text(p, QRectF(cx - 45, 124, 90, 20), label(k), 12,
                        self.t["dim"], True)
 
     def _draw_line(self, p):
@@ -910,7 +1016,7 @@ class Gadget(QWidget):
             p.setPen(Qt.NoPen)
             p.setBrush(c)
             p.drawEllipse(QPointF(x + 18, self.ch / 2), 4.5, 4.5)
-            self._text(p, QRectF(x + 28, 0, 48, self.ch), METRICS[k]["label"], 11,
+            self._text(p, QRectF(x + 28, 0, 48, self.ch), label(k), 11,
                        self.t["dim"], True, Qt.AlignLeft | Qt.AlignVCenter)
             self._text(p, QRectF(x + 76, 0, w - 80, self.ch), self._num(k, v), 20, c, True,
                        Qt.AlignLeft | Qt.AlignVCenter)
@@ -922,7 +1028,7 @@ class Gadget(QWidget):
             self._ring(p, cx, cy, 46, self._frac(k, v), c)
             self._text(p, QRectF(cx - 40, cy - 18, 80, 36), self._num(k, v), 24,
                        self.t["text"], True)
-            self._text(p, QRectF(cx - 45, 126, 90, 20), METRICS[k]["label"], 12,
+            self._text(p, QRectF(cx - 45, 126, 90, 20), label(k), 12,
                        self.t["dim"], True)
 
     def _draw_arc(self, p):
@@ -941,7 +1047,7 @@ class Gadget(QWidget):
             v = self.shown[k]
             y = i * rh + (rh - 36) / 2
             c = self._col(k, v)
-            self._text(p, QRectF(x0, y, 90, 22), METRICS[k]["label"], 13, self.t["dim"], True,
+            self._text(p, QRectF(x0, y, 90, 22), label(k), 13, self.t["dim"], True,
                        Qt.AlignLeft | Qt.AlignVCenter)
             self._text(p, QRectF(x1 - 110, y - 2, 110, 26), self._long(k, v), 19,
                        self.t["text"], True, Qt.AlignRight | Qt.AlignVCenter)
@@ -970,7 +1076,7 @@ class Gadget(QWidget):
             p.setPen(Qt.NoPen)
             p.setBrush(c)
             p.drawEllipse(QPointF(cx - 28, 22), 4, 4)
-            self._text(p, QRectF(cx - 22, 12, 80, 20), METRICS[k]["label"], 12, self.t["dim"],
+            self._text(p, QRectF(cx - 22, 12, 80, 20), label(k), 12, self.t["dim"],
                        True, Qt.AlignLeft | Qt.AlignVCenter)
             self._text(p, QRectF(cx - 60, 34, 120, 54), self._num(k, v), 42, c, True)
 
@@ -980,7 +1086,7 @@ class Gadget(QWidget):
             v = self.shown[k]
             y = i * rh + (rh - 48) / 2
             c = self._col(k, v)
-            self._text(p, QRectF(14, y, 80, 16), "> " + METRICS[k]["label"], 12, self.t["dim"],
+            self._text(p, QRectF(14, y, 80, 16), "> " + label(k), 12, self.t["dim"],
                        True, Qt.AlignLeft | Qt.AlignVCenter)
             self._text(p, QRectF(14, y + 18, 84, 30), self._long(k, v, compact=True), 22, c,
                        True, Qt.AlignLeft | Qt.AlignVCenter)
@@ -1030,8 +1136,8 @@ class Gadget(QWidget):
             val = self._long(k, v)
             if k == "RAM" and v is not None and ram_gb():
                 used, total = ram_gb()
-                val += f"  ({used:.1f} / {total:.1f} ГБ)"
-            rows.append(f'<span style="color:{dim}">{METRICS[k]["title"]}</span>'
+                val += f"  ({used:.1f} / {total:.1f} {tr('gb')})"
+            rows.append(f'<span style="color:{dim}">{title(k)}</span>'
                         f'&nbsp;&nbsp;<b style="color:{self._col(k, v).name()}">{val}</b>')
         return "<br>".join(rows)
 
@@ -1159,41 +1265,42 @@ class Gadget(QWidget):
         self._tip_hide()
         c = self.cfg
         menu = QMenu(self)
-        presets = menu.addMenu("✨ Пресеты")
+        presets = menu.addMenu(tr("menu_presets"))
         for name, kw in PRESETS.items():
-            act = presets.addAction(name)
+            act = presets.addAction(tr(name))
             act.triggered.connect(lambda _=False, kw=kw: self._set(**kw))
-        shown = menu.addMenu("Показывать")
-        for key, m in METRICS.items():
-            act = shown.addAction(m["title"])
+        shown = menu.addMenu(tr("menu_show"))
+        for key in METRICS:
+            act = shown.addAction(title(key))
             act.setCheckable(True)
             act.setChecked(key in self.active)
             act.toggled.connect(lambda on, key=key: self._toggle_metric(key, on))
-        self._radio(menu, "Тема", [(n, n) for n in THEMES], c["theme"],
+        self._radio(menu, tr("menu_theme"), [(n, n) for n in THEMES], c["theme"],
                     lambda v: self._set(theme=v))
-        self._radio(menu, "Вид", [(n, n) for n in LAYOUTS], c["layout"],
+        self._radio(menu, tr("menu_layout"), [(tr(n), n) for n in LAYOUTS], c["layout"],
                     lambda v: self._set(layout=v))
-        self._radio(menu, "Форма", [(n, n) for n in SHAPES], c["shape"],
+        self._radio(menu, tr("menu_shape"), [(tr(n), n) for n in SHAPES], c["shape"],
                     lambda v: self._set(shape=v))
-        self._radio(menu, "Ориентация", [("Горизонтально", "h"), ("Вертикально", "v")],
+        self._radio(menu, tr("menu_orient"), [(tr("horizontal"), "h"), (tr("vertical"), "v")],
                     c["orient"], lambda v: self._set(orient=v))
-        self._radio(menu, "Размер (Ctrl+колесо)", [(f"{s}%", s) for s in SCALES],
+        self._radio(menu, tr("menu_size"), [(f"{s}%", s) for s in SCALES],
                     round(self.k * 100), lambda v: self._set(scale=v / 100))
-        self._radio(menu, "Прозрачность", [(f"{o}%" , o) for o in OPACITIES],
+        self._radio(menu, tr("menu_opacity"), [(f"{o}%", o) for o in OPACITIES],
                     round(self.windowOpacity() * 100),
                     lambda v: (self.setWindowOpacity(v / 100), self._persist()))
+        self._radio(menu, tr("menu_lang"), list(LANGS.items()), LANG, self._set_lang)
         if self.tray is not None:
-            menu.addAction("Свернуть в трей (двойной клик)", self.hide)
-        top = menu.addAction("Поверх всех окон")
+            menu.addAction(tr("menu_tray"), self.hide)
+        top = menu.addAction(tr("menu_top"))
         top.setCheckable(True)
         top.setChecked(c["ontop"])
         top.toggled.connect(self._set_top)
         menu.addSeparator()
-        clean = menu.addAction("Очищается..." if self._cleaning else "Очистить систему от мусора")
+        clean = menu.addAction(tr("menu_cleaning" if self._cleaning else "menu_clean"))
         clean.setEnabled(not self._cleaning)
         clean.triggered.connect(self._clean_ask)
         menu.addSeparator()
-        menu.addAction("Выход", QApplication.quit)
+        menu.addAction(tr("menu_exit"), QApplication.quit)
         menu.exec(e.globalPos())
 
 

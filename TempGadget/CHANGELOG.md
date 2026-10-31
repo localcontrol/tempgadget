@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 - 2026-10-31
+- Interface language: Russian / English, switch in the right-click menu (default follows the Windows language).
+- Layout and shape are now stored as language-independent ids; settings from 1.0.0 are migrated automatically.
+- Russian README (`README.ru.md`) and language links.
+
 ## 1.0.0 - 2026-10-31
 - First public release.
 - Readings: CPU/GPU temperature, CPU/GPU load, RAM usage, drive temperatures.

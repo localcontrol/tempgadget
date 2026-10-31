@@ -2,7 +2,7 @@ rem TempGadget build script. Sources: src\, installer\. Output: dist\TempGadget.
 @echo off
 setlocal
 title TempGadget builder
-set "VER=1.0.0"
+set "VER=1.1.0"
 set "AUTHOR=Artvip"
 set "ROOT=%~dp0"
 set "OUT=%~dp0dist\"

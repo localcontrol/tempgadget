@@ -1,5 +1,7 @@
 # TempGadget
 
+**English** | [Русский](README.ru.md)
+
 A small always-on-top desktop gadget for Windows that shows the temperature and load of your CPU, GPU, RAM and drives in real time. Styled after the classic 8GadgetPack meters: a speedometer whose needle shows the load, with the temperature in the hub.
 
 ![TempGadget speedometer layout](docs/dial.png)
@@ -11,6 +13,7 @@ A small always-on-top desktop gadget for Windows that shows the temperature and 
 - **10 layouts, 14 themes, 5 shapes** and one-click presets. Combine them freely.
 - **Size 20-100%** (Ctrl + mouse wheel or the menu) and **horizontal / vertical** arrangement.
 - **Hover hint:** point at any dial to get a large, readable label with the name and value, even at small scale. RAM also shows used / total GB.
+- **Interface language: English / Russian**, switchable from the right-click menu (defaults to the Windows language).
 - Tray icon with live readings, opacity, always-on-top, remembers position and settings.
 - Optional **system cleaner** (temp files, update cache, browser caches, shader caches, thumbnails, crash dumps, recycle bin, DNS cache). It runs only when you ask for it and lets you choose what to clean.
 - Proper **Windows installer** with license, description, autostart option and driver setup.
@@ -38,12 +41,12 @@ Previews are rendered with sample values.
 | Action | Result |
 | --- | --- |
 | Drag with the left mouse button | Move the gadget |
-| Right click | Menu: presets, what to show, theme, layout, shape, orientation, size, opacity, always-on-top, cleaner, exit |
+| Right click | Menu: presets, what to show, theme, layout, shape, orientation, size, opacity, language, always-on-top, cleaner, exit |
 | Ctrl + mouse wheel | Change size (20-100%) |
 | Double click | Minimize to tray |
 | Hover | Hint with the name and value |
 
-Settings are stored in `%APPDATA%\TempGadget\config.json`. The interface language is currently Russian.
+Settings are stored in `%APPDATA%\TempGadget\config.json`. Language: right click → *Язык / Language*.
 
 ## Build from source
 
